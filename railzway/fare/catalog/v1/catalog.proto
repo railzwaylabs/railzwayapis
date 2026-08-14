@@ -1,0 +1,195 @@
+syntax = "proto3";
+package railzway.fare.catalog.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "railzway/common/v1/money.proto";
+import "railzway/common/v1/period.proto";
+
+// CatalogService manages products, reusable rate cards, and effective-dated prices.
+service CatalogService {
+  // Creates a product that can appear as an invoice line item.
+  rpc CreateProduct(CreateProductRequest) returns (Product) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/products"
+      body: "product"
+    };
+  }
+  // Gets a product by resource name.
+  rpc GetProduct(GetProductRequest) returns (Product) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/products/*}"};
+  }
+  // Lists products owned by an organization.
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/products"};
+  }
+  // Creates a reusable price book for customer contracts.
+  rpc CreateRateCard(CreateRateCardRequest) returns (RateCard) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/rateCards"
+      body: "rate_card"
+    };
+  }
+  // Gets a rate card by resource name.
+  rpc GetRateCard(GetRateCardRequest) returns (RateCard) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/rateCards/*}"};
+  }
+  // Lists rate cards owned by an organization.
+  rpc ListRateCards(ListRateCardsRequest) returns (ListRateCardsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/rateCards"};
+  }
+  // Adds an immutable, effective-dated rate to a rate card.
+  rpc AddRate(AddRateRequest) returns (Rate) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/rateCards/*}/rates"
+      body: "rate"
+    };
+  }
+}
+
+// ProductType identifies how a product contributes charges to an invoice.
+enum ProductType {
+  PRODUCT_TYPE_UNSPECIFIED = 0;
+  PRODUCT_TYPE_USAGE = 1;
+  PRODUCT_TYPE_SUBSCRIPTION = 2;
+  PRODUCT_TYPE_FIXED = 3;
+  PRODUCT_TYPE_COMPOSITE = 4;
+}
+
+// Product is a sellable SKU and the basic unit of an invoice line.
+message Product {
+  option (google.api.resource) = {
+    type: "api.railzway.com/Product"
+    pattern: "organizations/{organization}/products/{product}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED];
+  ProductType type = 3 [(google.api.field_behavior) = REQUIRED];
+  string meter = 4;
+  repeated string pricing_group_keys = 5;
+  repeated string presentation_group_keys = 6;
+  repeated string tags = 7;
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Tier defines one quantity interval in a tiered price.
+message Tier {
+  railzway.common.v1.Decimal start_quantity = 1 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Decimal end_quantity = 2;
+  railzway.common.v1.Money unit_price = 3 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Money flat_amount = 4;
+}
+
+// FlatRate charges a fixed amount independently of quantity.
+message FlatRate {
+  railzway.common.v1.Money amount = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// UnitRate charges an exact price for each unit_size of quantity.
+message UnitRate {
+  railzway.common.v1.Money unit_price = 1 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Decimal unit_size = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// TieredRate applies ordered price tiers to a quantity.
+message TieredRate {
+  repeated Tier tiers = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// PackageRate charges by fixed-size packages of quantity.
+message PackageRate {
+  railzway.common.v1.Decimal package_size = 1 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Money package_price = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Rate assigns one pricing model to a product for a non-overlapping period.
+message Rate {
+  reserved 4;
+  reserved "effective_time", "expire_time";
+
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string product = 2 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.EffectivePeriod effective_period = 3 [(google.api.field_behavior) = REQUIRED];
+  map<string, string> dimension_values = 5;
+  // Pricing model used to calculate charges.
+  oneof rate_type {
+    FlatRate flat = 6;
+    UnitRate unit = 7;
+    TieredRate tiered = 8;
+    PackageRate package = 9;
+  }
+}
+
+// RateCard is a currency-specific collection of product rates.
+message RateCard {
+  option (google.api.resource) = {
+    type: "api.railzway.com/RateCard"
+    pattern: "organizations/{organization}/rateCards/{rate_card}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string currency_code = 3 [(google.api.field_behavior) = REQUIRED];
+  repeated Rate rates = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// CreateProductRequest creates a product under an organization.
+message CreateProductRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Product product = 2 [(google.api.field_behavior) = REQUIRED];
+  string product_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// GetProductRequest selects one product.
+message GetProductRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListProductsRequest selects a page of products.
+message ListProductsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListProductsResponse contains one page of products.
+message ListProductsResponse {
+  repeated Product products = 1;
+  string next_page_token = 2;
+}
+
+// CreateRateCardRequest creates a rate card under an organization.
+message CreateRateCardRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  RateCard rate_card = 2 [(google.api.field_behavior) = REQUIRED];
+  string rate_card_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// GetRateCardRequest selects one rate card.
+message GetRateCardRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListRateCardsRequest selects a page of rate cards.
+message ListRateCardsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListRateCardsResponse contains one page of rate cards.
+message ListRateCardsResponse {
+  repeated RateCard rate_cards = 1;
+  string next_page_token = 2;
+}
+
+// AddRateRequest appends a rate to a rate card idempotently.
+message AddRateRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Rate rate = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}

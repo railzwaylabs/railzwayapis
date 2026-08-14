@@ -1,0 +1,67 @@
+name: Buf CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.proto"
+      - "buf.yaml"
+      - "buf.lock"
+      - "buf.gen.yaml"
+      - "Makefile"
+      - ".github/workflows/buf-ci.yml"
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Buf checks
+        uses: bufbuild/buf-action@fd21066df7214747548607aaa45548ba2b9bc1ff # v1.4.0
+        with:
+          version: "1.68.1"
+          token: ${{ secrets.BUF_TOKEN }}
+          breaking: ${{ github.event_name == 'pull_request' }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          push_create_visibility: public
+          archive: false
+          pr_comment: false
+
+      - name: Build schema
+        run: buf build --error-format github-actions
+
+      - name: Verify dependency lock
+        run: |
+          buf dep update
+          git diff --exit-code -- buf.lock
+
+      - name: Verify code generation
+        run: buf generate
+
+      - name: Verify patch hygiene
+        run: git diff --check

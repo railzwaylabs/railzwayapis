@@ -1,0 +1,83 @@
+name: Bug report
+description: Report an incorrect API contract, generated artifact, or repository workflow.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve the Railzway API contracts.
+
+  - type: input
+    id: area
+    attributes:
+      label: Area or package
+      description: Identify the affected package, service, or tooling area.
+      placeholder: railzway.billing.catalog.v1
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: Describe what currently happens, including relevant errors.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: Describe the contract or tooling behavior you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest reproducible example or command sequence.
+      placeholder: |
+        1. Run `buf lint`
+        2. Import `...`
+        3. Observe `...`
+    validations:
+      required: true
+
+  - type: textarea
+    id: buf-environment
+    attributes:
+      label: Buf version and output
+      description: Include `buf --version` and relevant command output.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      description: Does fixing this require changing an existing public API?
+      options:
+        - No public API change
+        - Backward-compatible API change
+        - Potential breaking change
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add links, schema snippets, or other relevant context.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched for an existing issue that describes this problem.
+          required: true
+        - label: I removed credentials and sensitive customer data from this report.
+          required: true
+

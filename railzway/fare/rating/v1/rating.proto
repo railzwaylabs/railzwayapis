@@ -1,0 +1,76 @@
+syntax = "proto3";
+package railzway.fare.rating.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "railzway/common/v1/money.proto";
+
+// RatingService aggregates usage and previews monetary charges.
+service RatingService {
+  // QueryUsage returns aggregated usage for a reporting period.
+  rpc QueryUsage(QueryUsageRequest) returns (QueryUsageResponse) {
+    option (google.api.http) = {get: "/v1/{customer=organizations/*/customers/*}/usage"};
+  }
+  // PreviewCharges rates usage without creating or finalizing an invoice.
+  rpc PreviewCharges(PreviewChargesRequest) returns (PreviewChargesResponse) {
+    option (google.api.http) = {
+      post: "/v1/{customer=organizations/*/customers/*}/charges:preview"
+      body: "*"
+    };
+  }
+}
+
+// TimeRange is a half-open reporting interval used for usage and rating queries.
+message TimeRange {
+  google.protobuf.Timestamp start_time = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp end_time = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// UsageAggregate contains a measured quantity for one dimension set.
+message UsageAggregate {
+  string meter = 1;
+  railzway.common.v1.Decimal quantity = 2;
+  map<string, string> dimensions = 3;
+}
+
+// RatedCharge records the price and amount selected for aggregated usage.
+message RatedCharge {
+  string product = 1;
+  string rate_id = 2;
+  railzway.common.v1.Decimal quantity = 3;
+  railzway.common.v1.Money subtotal = 4;
+  railzway.common.v1.Money credit = 5;
+  railzway.common.v1.Money net = 6;
+  reserved 7;
+  reserved "subtotal_amount", "credit_amount", "net_amount", "currency_code";
+  map<string, string> dimensions = 8;
+}
+
+// QueryUsageRequest selects usage to aggregate.
+message QueryUsageRequest {
+  string customer = 1 [(google.api.field_behavior) = REQUIRED];
+  TimeRange period = 2 [(google.api.field_behavior) = REQUIRED];
+  repeated string meters = 3;
+}
+
+// QueryUsageResponse contains aggregated usage results.
+message QueryUsageResponse {
+  repeated UsageAggregate usage = 1;
+}
+
+// PreviewChargesRequest selects usage and pricing context to rate.
+message PreviewChargesRequest {
+  string customer = 1 [(google.api.field_behavior) = REQUIRED];
+  string contract = 2;
+  TimeRange period = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// PreviewChargesResponse contains rated charges and their total.
+message PreviewChargesResponse {
+  repeated RatedCharge charges = 1;
+  railzway.common.v1.Money total = 2;
+  reserved 3;
+  reserved "total_amount", "currency_code";
+  google.protobuf.Timestamp as_of_time = 4;
+}

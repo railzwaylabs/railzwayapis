@@ -1,0 +1,466 @@
+syntax = "proto3";
+
+package railzway.payment.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "railzway/common/v1/money.proto";
+
+// ProviderConnectionStatus describes whether a merchant connection can route
+// new payments.
+enum ProviderConnectionStatus {
+  PROVIDER_CONNECTION_STATUS_UNSPECIFIED = 0;
+  PROVIDER_CONNECTION_STATUS_PENDING = 1;
+  PROVIDER_CONNECTION_STATUS_ACTIVE = 2;
+  PROVIDER_CONNECTION_STATUS_RESTRICTED = 3;
+  PROVIDER_CONNECTION_STATUS_DISABLED = 4;
+}
+
+// ProviderHealthStatus describes the observed runtime availability of a
+// provider connection without changing its administrative state.
+enum ProviderHealthStatus {
+  PROVIDER_HEALTH_STATUS_UNSPECIFIED = 0;
+  PROVIDER_HEALTH_STATUS_UNKNOWN = 1;
+  PROVIDER_HEALTH_STATUS_HEALTHY = 2;
+  PROVIDER_HEALTH_STATUS_DEGRADED = 3;
+  PROVIDER_HEALTH_STATUS_UNAVAILABLE = 4;
+}
+
+// PaymentMethodType identifies a provider-neutral payment instrument family.
+enum PaymentMethodType {
+  PAYMENT_METHOD_TYPE_UNSPECIFIED = 0;
+  PAYMENT_METHOD_TYPE_CARD = 1;
+  PAYMENT_METHOD_TYPE_BANK_DEBIT = 2;
+  PAYMENT_METHOD_TYPE_BANK_TRANSFER = 3;
+  PAYMENT_METHOD_TYPE_DIGITAL_WALLET = 4;
+  PAYMENT_METHOD_TYPE_REAL_TIME_PAYMENT = 5;
+}
+
+// PaymentMethodStatus describes whether a stored method can be used.
+enum PaymentMethodStatus {
+  PAYMENT_METHOD_STATUS_UNSPECIFIED = 0;
+  PAYMENT_METHOD_STATUS_PENDING = 1;
+  PAYMENT_METHOD_STATUS_ACTIVE = 2;
+  PAYMENT_METHOD_STATUS_REQUIRES_ACTION = 3;
+  PAYMENT_METHOD_STATUS_DISABLED = 4;
+}
+
+// PaymentStatus describes the collection lifecycle for an invoice.
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_PENDING = 1;
+  PAYMENT_STATUS_PROCESSING = 2;
+  PAYMENT_STATUS_REQUIRES_ACTION = 3;
+  PAYMENT_STATUS_SUCCEEDED = 4;
+  PAYMENT_STATUS_FAILED = 5;
+  PAYMENT_STATUS_RECONCILING = 6;
+}
+
+// PaymentAttemptOutcome describes the result of one provider interaction.
+enum PaymentAttemptOutcome {
+  PAYMENT_ATTEMPT_OUTCOME_UNSPECIFIED = 0;
+  PAYMENT_ATTEMPT_OUTCOME_PROCESSING = 1;
+  PAYMENT_ATTEMPT_OUTCOME_SUCCEEDED = 2;
+  PAYMENT_ATTEMPT_OUTCOME_FAILED = 3;
+  PAYMENT_ATTEMPT_OUTCOME_AMBIGUOUS = 4;
+}
+
+// PaymentFailureCategory determines whether and how collection can continue.
+enum PaymentFailureCategory {
+  PAYMENT_FAILURE_CATEGORY_UNSPECIFIED = 0;
+  PAYMENT_FAILURE_CATEGORY_TECHNICAL = 1;
+  PAYMENT_FAILURE_CATEGORY_BUSINESS_DECLINE = 2;
+  PAYMENT_FAILURE_CATEGORY_INSUFFICIENT_FUNDS = 3;
+  PAYMENT_FAILURE_CATEGORY_AUTHENTICATION_REQUIRED = 4;
+  PAYMENT_FAILURE_CATEGORY_FRAUD_REJECTION = 5;
+  PAYMENT_FAILURE_CATEGORY_INVALID_PAYMENT_METHOD = 6;
+  PAYMENT_FAILURE_CATEGORY_NO_ELIGIBLE_PROVIDER = 7;
+}
+
+// ProviderCapabilities describes payment operations supported by a connection.
+message ProviderCapabilities {
+  repeated string country_codes = 1;
+  repeated string currency_codes = 2;
+  repeated PaymentMethodType payment_method_types = 3;
+  bool supports_recurring = 4;
+  bool supports_off_session = 5;
+}
+
+// ProviderConnection represents an organization's merchant account at a
+// payment provider. It never contains provider credentials.
+message ProviderConnection {
+  option (google.api.resource) = {
+    type: "api.railzway.com/ProviderConnection"
+    pattern: "organizations/{organization}/providerConnections/{provider_connection}"
+  };
+
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string provider_type = 2 [(google.api.field_behavior) = REQUIRED];
+  string display_name = 3 [(google.api.field_behavior) = REQUIRED];
+  ProviderCapabilities capabilities = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  ProviderConnectionStatus status = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  ProviderHealthStatus health_status = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// ProviderCredential supplies an opaque credential during connection setup.
+// Implementations must consume it without persisting it in the API resource.
+message ProviderCredential {
+  // credential contains exactly one secret-management input.
+  oneof credential {
+    string secret_reference = 1;
+    string setup_token = 2;
+  }
+}
+
+// RoutingRule defines provider priority for one eligibility scope.
+message RoutingRule {
+  string provider_connection = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated string country_codes = 2;
+  repeated string currency_codes = 3;
+  repeated PaymentMethodType payment_method_types = 4;
+  bool require_recurring = 5;
+  bool require_off_session = 6;
+}
+
+// RoutingPolicy contains the ordered provider rules for an organization.
+message RoutingPolicy {
+  option (google.api.resource) = {
+    type: "api.railzway.com/RoutingPolicy"
+    pattern: "organizations/{organization}/routingPolicy"
+  };
+
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  repeated RoutingRule rules = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp update_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// PaymentMethod is a non-sensitive reference to a customer payment instrument
+// stored by one provider connection.
+message PaymentMethod {
+  option (google.api.resource) = {
+    type: "api.railzway.com/PaymentMethod"
+    pattern: "organizations/{organization}/customers/{customer}/paymentMethods/{payment_method}"
+  };
+
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string provider_connection = 2 [(google.api.field_behavior) = REQUIRED];
+  string provider_reference = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  PaymentMethodType type = 4 [(google.api.field_behavior) = REQUIRED];
+  PaymentMethodStatus status = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string display_name = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string country_code = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  bool recurring_enabled = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  bool off_session_enabled = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Payment represents collection of the immutable outstanding amount of one
+// finalized invoice.
+message Payment {
+  option (google.api.resource) = {
+    type: "api.railzway.com/Payment"
+    pattern: "organizations/{organization}/customers/{customer}/payments/{payment}"
+  };
+
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string invoice = 2 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Money amount = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  PaymentStatus status = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string provider_connection = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string payment_method = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string idempotency_key = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  PaymentFailureCategory failure_category = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string failure_message = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp succeed_time = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+  bool recurring = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+  bool off_session = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// PaymentAttempt is an immutable record of one provider charge interaction.
+message PaymentAttempt {
+  option (google.api.resource) = {
+    type: "api.railzway.com/PaymentAttempt"
+    pattern: "organizations/{organization}/customers/{customer}/payments/{payment}/attempts/{attempt}"
+  };
+
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string provider_connection = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string payment_method = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string provider_transaction_reference = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  PaymentAttemptOutcome outcome = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  PaymentFailureCategory failure_category = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string failure_message = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string idempotency_key = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// PaymentConfigurationService manages organization-owned provider connections
+// and their routing policy.
+service PaymentConfigurationService {
+  // CreateProviderConnection connects an organization merchant account.
+  rpc CreateProviderConnection(CreateProviderConnectionRequest) returns (ProviderConnection) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/providerConnections"
+      body: "*"
+    };
+  }
+
+  // GetProviderConnection retrieves a provider connection.
+  rpc GetProviderConnection(GetProviderConnectionRequest) returns (ProviderConnection) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/providerConnections/*}"};
+  }
+
+  // ListProviderConnections lists an organization's provider connections.
+  rpc ListProviderConnections(ListProviderConnectionsRequest) returns (ListProviderConnectionsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/providerConnections"};
+  }
+
+  // UpdateProviderConnection updates non-secret connection settings.
+  rpc UpdateProviderConnection(UpdateProviderConnectionRequest) returns (ProviderConnection) {
+    option (google.api.http) = {
+      patch: "/v1/{provider_connection.name=organizations/*/providerConnections/*}"
+      body: "provider_connection"
+    };
+  }
+
+  // DisableProviderConnection stops new payments from using a connection.
+  rpc DisableProviderConnection(DisableProviderConnectionRequest) returns (ProviderConnection) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/providerConnections/*}:disable"
+      body: "*"
+    };
+  }
+
+  // GetRoutingPolicy retrieves an organization's routing policy.
+  rpc GetRoutingPolicy(GetRoutingPolicyRequest) returns (RoutingPolicy) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/routingPolicy}"};
+  }
+
+  // UpdateRoutingPolicy replaces selected routing policy fields.
+  rpc UpdateRoutingPolicy(UpdateRoutingPolicyRequest) returns (RoutingPolicy) {
+    option (google.api.http) = {
+      patch: "/v1/{routing_policy.name=organizations/*/routingPolicy}"
+      body: "routing_policy"
+    };
+  }
+}
+
+// PaymentMethodService manages provider-bound customer payment methods.
+service PaymentMethodService {
+  // CreatePaymentMethod stores a provider token as a reusable method.
+  rpc CreatePaymentMethod(CreatePaymentMethodRequest) returns (PaymentMethod) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/customers/*}/paymentMethods"
+      body: "*"
+    };
+  }
+
+  // GetPaymentMethod retrieves a payment method.
+  rpc GetPaymentMethod(GetPaymentMethodRequest) returns (PaymentMethod) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/paymentMethods/*}"};
+  }
+
+  // ListPaymentMethods lists a customer's payment methods.
+  rpc ListPaymentMethods(ListPaymentMethodsRequest) returns (ListPaymentMethodsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/paymentMethods"};
+  }
+
+  // DisablePaymentMethod prevents future collection with a method.
+  rpc DisablePaymentMethod(DisablePaymentMethodRequest) returns (PaymentMethod) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/paymentMethods/*}:disable"
+      body: "*"
+    };
+  }
+}
+
+// PaymentService explicitly collects finalized invoices and exposes attempts.
+service PaymentService {
+  // CreatePayment starts collection for a finalized invoice.
+  rpc CreatePayment(CreatePaymentRequest) returns (Payment) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/customers/*}/payments"
+      body: "payment"
+    };
+  }
+
+  // GetPayment retrieves a payment.
+  rpc GetPayment(GetPaymentRequest) returns (Payment) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/payments/*}"};
+  }
+
+  // ListPayments lists a customer's payments.
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/payments"};
+  }
+
+  // RetryPayment explicitly retries an unsuccessful collection.
+  rpc RetryPayment(RetryPaymentRequest) returns (Payment) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/payments/*}:retry"
+      body: "*"
+    };
+  }
+
+  // GetPaymentAttempt retrieves an immutable payment attempt.
+  rpc GetPaymentAttempt(GetPaymentAttemptRequest) returns (PaymentAttempt) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/payments/*/attempts/*}"};
+  }
+
+  // ListPaymentAttempts lists the attempts for a payment.
+  rpc ListPaymentAttempts(ListPaymentAttemptsRequest) returns (ListPaymentAttemptsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*/payments/*}/attempts"};
+  }
+}
+
+// CreateProviderConnectionRequest contains a provider and setup credential.
+message CreateProviderConnectionRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  ProviderConnection provider_connection = 2 [(google.api.field_behavior) = REQUIRED];
+  string provider_connection_id = 3 [(google.api.field_behavior) = REQUIRED];
+  ProviderCredential credential = 4 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 5;
+}
+
+// GetProviderConnectionRequest identifies a provider connection.
+message GetProviderConnectionRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListProviderConnectionsRequest selects provider connections.
+message ListProviderConnectionsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListProviderConnectionsResponse contains a page of provider connections.
+message ListProviderConnectionsResponse {
+  repeated ProviderConnection provider_connections = 1;
+  string next_page_token = 2;
+}
+
+// UpdateProviderConnectionRequest contains connection fields to update.
+message UpdateProviderConnectionRequest {
+  ProviderConnection provider_connection = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// DisableProviderConnectionRequest identifies a connection to disable.
+message DisableProviderConnectionRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// GetRoutingPolicyRequest identifies an organization's singleton policy.
+message GetRoutingPolicyRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// UpdateRoutingPolicyRequest contains routing policy fields to update.
+message UpdateRoutingPolicyRequest {
+  RoutingPolicy routing_policy = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// CreatePaymentMethodRequest contains a provider setup token.
+message CreatePaymentMethodRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  PaymentMethod payment_method = 2 [(google.api.field_behavior) = REQUIRED];
+  string payment_method_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string setup_token = 4 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 5;
+}
+
+// GetPaymentMethodRequest identifies a payment method.
+message GetPaymentMethodRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListPaymentMethodsRequest selects a customer's payment methods.
+message ListPaymentMethodsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListPaymentMethodsResponse contains a page of payment methods.
+message ListPaymentMethodsResponse {
+  repeated PaymentMethod payment_methods = 1;
+  string next_page_token = 2;
+}
+
+// DisablePaymentMethodRequest identifies a payment method to disable.
+message DisablePaymentMethodRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// CreatePaymentRequest starts one logical invoice collection. Candidate payment
+// methods permit safe routing only across methods already valid at each provider.
+message CreatePaymentRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Payment payment = 2 [(google.api.field_behavior) = REQUIRED];
+  string payment_id = 3 [(google.api.field_behavior) = REQUIRED];
+  repeated string candidate_payment_methods = 4 [(google.api.field_behavior) = REQUIRED];
+  bool recurring = 5;
+  bool off_session = 6;
+  string request_id = 7 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetPaymentRequest identifies a payment.
+message GetPaymentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListPaymentsRequest selects payments belonging to a customer.
+message ListPaymentsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+// ListPaymentsResponse contains a page of payments.
+message ListPaymentsResponse {
+  repeated Payment payments = 1;
+  string next_page_token = 2;
+}
+
+// RetryPaymentRequest retries collection with eligible customer methods.
+message RetryPaymentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated string candidate_payment_methods = 2;
+  string request_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetPaymentAttemptRequest identifies a payment attempt.
+message GetPaymentAttemptRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListPaymentAttemptsRequest selects attempts belonging to a payment.
+message ListPaymentAttemptsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListPaymentAttemptsResponse contains a page of payment attempts.
+message ListPaymentAttemptsResponse {
+  repeated PaymentAttempt payment_attempts = 1;
+  string next_page_token = 2;
+}

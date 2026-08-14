@@ -1,0 +1,188 @@
+syntax = "proto3";
+package railzway.fare.contract.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "railzway/common/v1/period.proto";
+import "railzway/fare/catalog/v1/catalog.proto";
+
+// ContractService manages negotiated billing agreements and their amendments.
+service ContractService {
+  // CreateContract creates a negotiated agreement for a customer.
+  rpc CreateContract(CreateContractRequest) returns (Contract) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/customers/*}/contracts"
+      body: "contract"
+    };
+  }
+  // GetContract retrieves a contract by resource name.
+  rpc GetContract(GetContractRequest) returns (Contract) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/contracts/*}"};
+  }
+  // ListContracts lists contracts belonging to a customer.
+  rpc ListContracts(ListContractsRequest) returns (ListContractsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/contracts"};
+  }
+  // ScheduleAmendment schedules a future contract change.
+  rpc ScheduleAmendment(ScheduleAmendmentRequest) returns (ContractAmendment) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/contracts/*}:scheduleAmendment"
+      body: "*"
+    };
+  }
+  // GetAmendment retrieves a contract amendment by resource name.
+  rpc GetAmendment(GetAmendmentRequest) returns (ContractAmendment) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/contracts/*/amendments/*}"};
+  }
+  // ListAmendments lists amendments for a contract.
+  rpc ListAmendments(ListAmendmentsRequest) returns (ListAmendmentsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*/contracts/*}/amendments"};
+  }
+  // CancelAmendment cancels an amendment that has not yet been applied.
+  rpc CancelAmendment(CancelAmendmentRequest) returns (ContractAmendment) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/contracts/*/amendments/*}:cancel"
+      body: "*"
+    };
+  }
+  // EndContract schedules or records the end of a contract.
+  rpc EndContract(EndContractRequest) returns (Contract) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/contracts/*}:end"
+      body: "*"
+    };
+  }
+}
+
+// ContractStatus describes the lifecycle state of a contract.
+enum ContractStatus {
+  CONTRACT_STATUS_UNSPECIFIED = 0;
+  CONTRACT_STATUS_SCHEDULED = 1;
+  CONTRACT_STATUS_ACTIVE = 2;
+  CONTRACT_STATUS_ENDED = 3;
+  CONTRACT_STATUS_CANCELED = 4;
+}
+
+// RateOverride replaces a catalog rate for a negotiated scope and period.
+message RateOverride {
+  string product = 1 [(google.api.field_behavior) = REQUIRED];
+  string base_rate_id = 2;
+  railzway.common.v1.EffectivePeriod effective_period = 3 [(google.api.field_behavior) = REQUIRED];
+  map<string, string> dimension_values = 4;
+  // rate_type contains the negotiated pricing model.
+  oneof rate_type {
+    railzway.fare.catalog.v1.FlatRate flat = 5;
+    railzway.fare.catalog.v1.UnitRate unit = 6;
+    railzway.fare.catalog.v1.TieredRate tiered = 7;
+    railzway.fare.catalog.v1.PackageRate package = 8;
+  }
+}
+
+// Contract defines a customer's negotiated billing agreement.
+message Contract {
+  reserved 4;
+  reserved "start_time", "end_time";
+
+  option (google.api.resource) = {
+    type: "api.railzway.com/Contract"
+    pattern: "organizations/{organization}/customers/{customer}/contracts/{contract}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string rate_card = 2 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.EffectivePeriod effective_period = 3 [(google.api.field_behavior) = REQUIRED];
+  string billing_anchor_day = 5 [(google.api.field_behavior) = REQUIRED];
+  repeated RateOverride rate_overrides = 6;
+  ContractStatus status = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// AmendmentStatus describes the lifecycle state of a contract amendment.
+enum AmendmentStatus {
+  AMENDMENT_STATUS_UNSPECIFIED = 0;
+  AMENDMENT_STATUS_SCHEDULED = 1;
+  AMENDMENT_STATUS_APPLIED = 2;
+  AMENDMENT_STATUS_CANCELED = 3;
+}
+
+// ContractAmendment represents a scheduled change to a contract.
+message ContractAmendment {
+  option (google.api.resource) = {
+    type: "api.railzway.com/ContractAmendment"
+    pattern: "organizations/{organization}/customers/{customer}/contracts/{contract}/amendments/{amendment}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  google.protobuf.Timestamp effective_time = 2 [(google.api.field_behavior) = REQUIRED];
+  optional string rate_card = 3;
+  repeated RateOverride rate_overrides = 4;
+  optional google.protobuf.Timestamp contract_end_time = 5;
+  string reason = 6 [(google.api.field_behavior) = REQUIRED];
+  AmendmentStatus status = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// CreateContractRequest contains the contract to create.
+message CreateContractRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Contract contract = 2 [(google.api.field_behavior) = REQUIRED];
+  string contract_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// GetContractRequest identifies the contract to retrieve.
+message GetContractRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListContractsRequest selects contracts belonging to a customer.
+message ListContractsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListContractsResponse contains a page of contracts.
+message ListContractsResponse {
+  repeated Contract contracts = 1;
+  string next_page_token = 2;
+}
+
+// ScheduleAmendmentRequest contains the contract change to schedule.
+message ScheduleAmendmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  ContractAmendment amendment = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// GetAmendmentRequest identifies the amendment to retrieve.
+message GetAmendmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListAmendmentsRequest selects amendments belonging to a contract.
+message ListAmendmentsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListAmendmentsResponse contains a page of contract amendments.
+message ListAmendmentsResponse {
+  repeated ContractAmendment amendments = 1;
+  string next_page_token = 2;
+}
+
+// CancelAmendmentRequest identifies the scheduled amendment to cancel.
+message CancelAmendmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// EndContractRequest identifies a contract and when it should end.
+message EndContractRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp effective_time = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}

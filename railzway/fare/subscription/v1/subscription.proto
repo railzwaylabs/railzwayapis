@@ -1,0 +1,186 @@
+syntax = "proto3";
+package railzway.fare.subscription.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "railzway/common/v1/money.proto";
+import "railzway/common/v1/period.proto";
+
+// SubscriptionService manages recurring customer access to products.
+service SubscriptionService {
+  // CreateSubscription creates a subscription for a customer.
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (Subscription) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/customers/*}/subscriptions"
+      body: "subscription"
+    };
+  }
+  // GetSubscription retrieves a subscription by resource name.
+  rpc GetSubscription(GetSubscriptionRequest) returns (Subscription) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/subscriptions/*}"};
+  }
+  // ListSubscriptions lists subscriptions belonging to a customer.
+  rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/subscriptions"};
+  }
+  // CancelSubscription schedules or immediately applies cancellation.
+  rpc CancelSubscription(CancelSubscriptionRequest) returns (Subscription) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/subscriptions/*}:cancel"
+      body: "*"
+    };
+  }
+  // ScheduleAmendment schedules a future subscription change.
+  rpc ScheduleAmendment(ScheduleAmendmentRequest) returns (SubscriptionAmendment) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/subscriptions/*}:scheduleAmendment"
+      body: "*"
+    };
+  }
+  // GetAmendment retrieves a subscription amendment by resource name.
+  rpc GetAmendment(GetAmendmentRequest) returns (SubscriptionAmendment) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/subscriptions/*/amendments/*}"};
+  }
+  // ListAmendments lists amendments for a subscription.
+  rpc ListAmendments(ListAmendmentsRequest) returns (ListAmendmentsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*/subscriptions/*}/amendments"};
+  }
+  // CancelAmendment cancels an amendment that has not yet been applied.
+  rpc CancelAmendment(CancelAmendmentRequest) returns (SubscriptionAmendment) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/subscriptions/*/amendments/*}:cancel"
+      body: "*"
+    };
+  }
+}
+
+// SubscriptionStatus describes the lifecycle state of a subscription.
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATUS_SCHEDULED = 1;
+  SUBSCRIPTION_STATUS_TRIALING = 2;
+  SUBSCRIPTION_STATUS_ACTIVE = 3;
+  SUBSCRIPTION_STATUS_CANCELED = 4;
+  SUBSCRIPTION_STATUS_ENDED = 5;
+}
+
+// ProrationBehavior controls how mid-period changes affect charges.
+enum ProrationBehavior {
+  PRORATION_BEHAVIOR_UNSPECIFIED = 0;
+  PRORATION_BEHAVIOR_NONE = 1;
+  PRORATION_BEHAVIOR_CREDIT_AND_CHARGE = 2;
+}
+
+// AmendmentStatus describes the lifecycle state of a subscription amendment.
+enum AmendmentStatus {
+  AMENDMENT_STATUS_UNSPECIFIED = 0;
+  AMENDMENT_STATUS_SCHEDULED = 1;
+  AMENDMENT_STATUS_APPLIED = 2;
+  AMENDMENT_STATUS_CANCELED = 3;
+}
+
+// SubscriptionItem associates a subscribed product with its quantity.
+message SubscriptionItem {
+  string product = 1 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Decimal quantity = 2 [(google.api.field_behavior) = REQUIRED];
+  map<string, string> dimensions = 3;
+}
+
+// Subscription represents a customer's recurring product enrollment.
+message Subscription {
+  reserved 5;
+  reserved "start_time", "end_time";
+
+  option (google.api.resource) = {
+    type: "api.railzway.com/Subscription"
+    pattern: "organizations/{organization}/customers/{customer}/subscriptions/{subscription}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string contract = 2 [(google.api.field_behavior) = REQUIRED];
+  repeated SubscriptionItem items = 3 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.EffectivePeriod effective_period = 4 [(google.api.field_behavior) = REQUIRED];
+  SubscriptionStatus status = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// SubscriptionAmendment represents a scheduled subscription change.
+message SubscriptionAmendment {
+  option (google.api.resource) = {
+    type: "api.railzway.com/SubscriptionAmendment"
+    pattern: "organizations/{organization}/customers/{customer}/subscriptions/{subscription}/amendments/{amendment}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  google.protobuf.Timestamp effective_time = 2 [(google.api.field_behavior) = REQUIRED];
+  repeated SubscriptionItem items = 3 [(google.api.field_behavior) = REQUIRED];
+  ProrationBehavior proration_behavior = 4 [(google.api.field_behavior) = REQUIRED];
+  string reason = 5 [(google.api.field_behavior) = REQUIRED];
+  AmendmentStatus status = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// CreateSubscriptionRequest contains the subscription to create.
+message CreateSubscriptionRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Subscription subscription = 2 [(google.api.field_behavior) = REQUIRED];
+  string subscription_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// GetSubscriptionRequest identifies the subscription to retrieve.
+message GetSubscriptionRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListSubscriptionsRequest selects subscriptions belonging to a customer.
+message ListSubscriptionsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListSubscriptionsResponse contains a page of subscriptions.
+message ListSubscriptionsResponse {
+  repeated Subscription subscriptions = 1;
+  string next_page_token = 2;
+}
+
+// CancelSubscriptionRequest identifies a subscription and cancellation time.
+message CancelSubscriptionRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp effective_time = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// ScheduleAmendmentRequest contains the subscription change to schedule.
+message ScheduleAmendmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  SubscriptionAmendment amendment = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// GetAmendmentRequest identifies the amendment to retrieve.
+message GetAmendmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListAmendmentsRequest selects amendments belonging to a subscription.
+message ListAmendmentsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListAmendmentsResponse contains a page of subscription amendments.
+message ListAmendmentsResponse {
+  repeated SubscriptionAmendment amendments = 1;
+  string next_page_token = 2;
+}
+
+// CancelAmendmentRequest identifies the scheduled amendment to cancel.
+message CancelAmendmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}

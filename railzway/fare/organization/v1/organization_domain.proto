@@ -1,0 +1,105 @@
+syntax = "proto3";
+package railzway.fare.organization.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// OrganizationDomainService manages hostnames assigned to organizations.
+service OrganizationDomainService {
+  // CreateOrganizationDomain registers a custom hostname for an organization.
+  rpc CreateOrganizationDomain(CreateOrganizationDomainRequest) returns (OrganizationDomain) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/domains"
+      body: "organization_domain"
+    };
+  }
+  // GetOrganizationDomain returns one domain visible to the caller.
+  rpc GetOrganizationDomain(GetOrganizationDomainRequest) returns (OrganizationDomain) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/domains/*}"};
+  }
+  // ListOrganizationDomains lists domains assigned to an organization.
+  rpc ListOrganizationDomains(ListOrganizationDomainsRequest) returns (ListOrganizationDomainsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/domains"};
+  }
+  // DeleteOrganizationDomain removes a custom domain. Default domains cannot be deleted.
+  rpc DeleteOrganizationDomain(DeleteOrganizationDomainRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/{name=organizations/*/domains/*}"};
+  }
+  // VerifyOrganizationDomain checks DNS and activates a custom domain.
+  rpc VerifyOrganizationDomain(VerifyOrganizationDomainRequest) returns (OrganizationDomain) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/domains/*}/verify"
+      body: "*"
+    };
+  }
+}
+
+// OrganizationDomain is a hostname routed to one Fare organization.
+message OrganizationDomain {
+  option (google.api.resource) = {
+    type: "api.railzway.com/OrganizationDomain"
+    pattern: "organizations/{organization}/domains/{domain}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string hostname = 2 [(google.api.field_behavior) = REQUIRED];
+  OrganizationDomainType type = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  OrganizationDomainStatus status = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string verification_record_name = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string verification_record_value = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp verified_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// OrganizationDomainType distinguishes system-owned and customer-owned hostnames.
+enum OrganizationDomainType {
+  ORGANIZATION_DOMAIN_TYPE_UNSPECIFIED = 0;
+  ORGANIZATION_DOMAIN_TYPE_DEFAULT = 1;
+  ORGANIZATION_DOMAIN_TYPE_CUSTOM = 2;
+}
+
+// OrganizationDomainStatus describes domain verification and routing readiness.
+enum OrganizationDomainStatus {
+  ORGANIZATION_DOMAIN_STATUS_UNSPECIFIED = 0;
+  ORGANIZATION_DOMAIN_STATUS_PENDING_VERIFICATION = 1;
+  ORGANIZATION_DOMAIN_STATUS_ACTIVE = 2;
+  ORGANIZATION_DOMAIN_STATUS_FAILED = 3;
+}
+
+// CreateOrganizationDomainRequest registers a custom domain under an organization.
+message CreateOrganizationDomainRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  OrganizationDomain organization_domain = 2 [(google.api.field_behavior) = REQUIRED];
+  string organization_domain_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetOrganizationDomainRequest identifies an organization domain.
+message GetOrganizationDomainRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListOrganizationDomainsRequest selects domains belonging to an organization.
+message ListOrganizationDomainsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListOrganizationDomainsResponse contains one page of organization domains.
+message ListOrganizationDomainsResponse {
+  repeated OrganizationDomain organization_domains = 1;
+  string next_page_token = 2;
+}
+
+// DeleteOrganizationDomainRequest identifies a custom domain to remove.
+message DeleteOrganizationDomainRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// VerifyOrganizationDomainRequest identifies a custom domain to verify.
+message VerifyOrganizationDomainRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}

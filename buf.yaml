@@ -1,0 +1,26 @@
+version: v2
+
+modules:
+  - path: .
+    name: buf.build/railzwaylabs/railzwayapis
+
+deps:
+  - buf.build/googleapis/googleapis
+
+lint:
+  use:
+    - STANDARD
+    - COMMENTS
+  # Google AIP standard methods return the resource directly and commonly use
+  # google.protobuf.Empty for deletes. These deliberately differ from Buf's
+  # generic RPC response-wrapper convention.
+  except:
+    - COMMENT_ENUM_VALUE
+    - COMMENT_FIELD
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_RESPONSE_STANDARD_NAME
+  rpc_allow_google_protobuf_empty_responses: true
+
+breaking:
+  use:
+    - FILE

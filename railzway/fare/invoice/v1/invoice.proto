@@ -1,0 +1,126 @@
+syntax = "proto3";
+package railzway.fare.invoice.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "railzway/common/v1/money.proto";
+
+// InvoiceService previews and manages customer invoices.
+service InvoiceService {
+  // GetInvoice retrieves an invoice by resource name.
+  rpc GetInvoice(GetInvoiceRequest) returns (Invoice) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/invoices/*}"};
+  }
+  // ListInvoices lists invoices belonging to a customer.
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/invoices"};
+  }
+  // PreviewInvoice computes an invoice without persisting a finalized result.
+  rpc PreviewInvoice(PreviewInvoiceRequest) returns (Invoice) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/customers/*}/invoices:preview"
+      body: "*"
+    };
+  }
+  // FinalizeInvoice makes an invoice immutable for financial reporting.
+  rpc FinalizeInvoice(FinalizeInvoiceRequest) returns (Invoice) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/invoices/*}:finalize"
+      body: "*"
+    };
+  }
+  // VoidInvoice invalidates a finalized invoice while preserving its record.
+  rpc VoidInvoice(VoidInvoiceRequest) returns (Invoice) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/invoices/*}:void"
+      body: "*"
+    };
+  }
+}
+
+// InvoiceStatus describes the lifecycle state of an invoice.
+enum InvoiceStatus {
+  INVOICE_STATUS_UNSPECIFIED = 0;
+  INVOICE_STATUS_DRAFT = 1;
+  INVOICE_STATUS_FINALIZED = 2;
+  INVOICE_STATUS_VOID = 3;
+}
+
+// InvoiceLine records one rated charge and the rate used to calculate it.
+message InvoiceLine {
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string product = 2 [(google.api.field_behavior) = REQUIRED];
+  string rate_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string description = 4;
+  railzway.common.v1.Decimal quantity = 5 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Money unit_price = 6;
+  railzway.common.v1.Money subtotal = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  railzway.common.v1.Money credit = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  railzway.common.v1.Money total = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  map<string, string> dimensions = 10;
+}
+
+// Invoice represents calculated charges for a customer and billing period.
+message Invoice {
+  reserved 4;
+  reserved "currency_code";
+
+  option (google.api.resource) = {
+    type: "api.railzway.com/Invoice"
+    pattern: "organizations/{organization}/customers/{customer}/invoices/{invoice}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string contract = 2 [(google.api.field_behavior) = REQUIRED];
+  InvoiceStatus status = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp period_start_time = 5 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp period_end_time = 6 [(google.api.field_behavior) = REQUIRED];
+  repeated InvoiceLine lines = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  railzway.common.v1.Money subtotal = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  railzway.common.v1.Money credit = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  railzway.common.v1.Money tax = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+  railzway.common.v1.Money total = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp finalize_time = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// GetInvoiceRequest identifies the invoice to retrieve.
+message GetInvoiceRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListInvoicesRequest selects invoices belonging to a customer.
+message ListInvoicesRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+// ListInvoicesResponse contains a page of invoices.
+message ListInvoicesResponse {
+  repeated Invoice invoices = 1;
+  string next_page_token = 2;
+}
+
+// PreviewInvoiceRequest selects a customer and period to calculate.
+message PreviewInvoiceRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  string contract = 2;
+  google.protobuf.Timestamp period_start_time = 3 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp period_end_time = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// FinalizeInvoiceRequest identifies the invoice to finalize.
+message FinalizeInvoiceRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// VoidInvoiceRequest identifies an invoice and records why it is voided.
+message VoidInvoiceRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3 [(google.api.field_behavior) = REQUIRED];
+}

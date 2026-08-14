@@ -1,0 +1,232 @@
+syntax = "proto3";
+
+package railzway.fare.credit.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "railzway/common/v1/money.proto";
+import "railzway/common/v1/period.proto";
+
+// CreditService manages customer credits, commitments, and balances.
+service CreditService {
+  // GrantCredit grants a time-bounded credit to a customer.
+  rpc GrantCredit(GrantCreditRequest) returns (CreditGrant) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/customers/*}/credits"
+      body: "credit"
+    };
+  }
+  // GetCredit retrieves a credit grant by resource name.
+  rpc GetCredit(GetCreditRequest) returns (CreditGrant) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/credits/*}"};
+  }
+  // ListCredits lists credit grants belonging to a customer.
+  rpc ListCredits(ListCreditsRequest) returns (ListCreditsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/credits"};
+  }
+  // VoidCredit prevents any remaining grant amount from being consumed.
+  rpc VoidCredit(VoidCreditRequest) returns (CreditGrant) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/credits/*}:void"
+      body: "*"
+    };
+  }
+  // CreateCommitment creates a customer's minimum-spend commitment.
+  rpc CreateCommitment(CreateCommitmentRequest) returns (Commitment) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*/customers/*}/commitments"
+      body: "commitment"
+    };
+  }
+  // GetCommitment retrieves a commitment by resource name.
+  rpc GetCommitment(GetCommitmentRequest) returns (Commitment) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/commitments/*}"};
+  }
+  // ListCommitments lists commitments belonging to a customer.
+  rpc ListCommitments(ListCommitmentsRequest) returns (ListCommitmentsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/commitments"};
+  }
+  // VoidCommitment deactivates a commitment while preserving its record.
+  rpc VoidCommitment(VoidCommitmentRequest) returns (Commitment) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*/commitments/*}:void"
+      body: "*"
+    };
+  }
+  // GetBalance returns the customer's current credit balance.
+  rpc GetBalance(GetBalanceRequest) returns (Balance) {
+    option (google.api.http) = {get: "/v1/{customer=organizations/*/customers/*}/balance"};
+  }
+  // ListBalanceTransactions lists the ledger entries behind a balance.
+  rpc ListBalanceTransactions(ListBalanceTransactionsRequest) returns (ListBalanceTransactionsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/balanceTransactions"};
+  }
+}
+
+// GrantStatus describes the lifecycle state of a credit grant or commitment.
+enum GrantStatus {
+  GRANT_STATUS_UNSPECIFIED = 0;
+  GRANT_STATUS_SCHEDULED = 1;
+  GRANT_STATUS_ACTIVE = 2;
+  GRANT_STATUS_EXHAUSTED = 3;
+  GRANT_STATUS_EXPIRED = 4;
+  GRANT_STATUS_VOID = 5;
+}
+
+// BalanceTransactionType identifies why a credit balance changed.
+enum BalanceTransactionType {
+  BALANCE_TRANSACTION_TYPE_UNSPECIFIED = 0;
+  BALANCE_TRANSACTION_TYPE_CREDIT_GRANT = 1;
+  BALANCE_TRANSACTION_TYPE_COMMITMENT = 2;
+  BALANCE_TRANSACTION_TYPE_CONSUMPTION = 3;
+  BALANCE_TRANSACTION_TYPE_ADJUSTMENT = 4;
+  BALANCE_TRANSACTION_TYPE_EXPIRATION = 5;
+  BALANCE_TRANSACTION_TYPE_VOID = 6;
+}
+
+// CreditGrant represents promotional or contractual value available to spend.
+message CreditGrant {
+  option (google.api.resource) = {
+    type: "api.railzway.com/CreditGrant"
+    pattern: "organizations/{organization}/customers/{customer}/credits/{credit}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  railzway.common.v1.Money amount = 2 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.EffectivePeriod effective_period = 3 [(google.api.field_behavior) = REQUIRED];
+  repeated string applicable_products = 4;
+  repeated string applicable_tags = 5;
+  int32 priority = 6;
+  string reason = 7 [(google.api.field_behavior) = REQUIRED];
+  GrantStatus status = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp void_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Commitment represents minimum spend agreed for an effective period.
+message Commitment {
+  option (google.api.resource) = {
+    type: "api.railzway.com/Commitment"
+    pattern: "organizations/{organization}/customers/{customer}/commitments/{commitment}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string contract = 2 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Money committed_amount = 3 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.Money cost_basis = 4 [(google.api.field_behavior) = REQUIRED];
+  railzway.common.v1.EffectivePeriod effective_period = 5 [(google.api.field_behavior) = REQUIRED];
+  repeated string applicable_products = 6;
+  GrantStatus status = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp void_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Balance is a customer's current available credit amount.
+message Balance {
+  string customer = 1;
+  railzway.common.v1.Money credit_remaining = 2;
+  railzway.common.v1.Money commitment_remaining = 3;
+  google.protobuf.Timestamp as_of_time = 4;
+}
+
+// BalanceTransaction is an immutable ledger entry affecting credit balance.
+message BalanceTransaction {
+  option (google.api.resource) = {
+    type: "api.railzway.com/BalanceTransaction"
+    pattern: "organizations/{organization}/customers/{customer}/balanceTransactions/{transaction}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  BalanceTransactionType type = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  railzway.common.v1.Money amount = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string source = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string description = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// GrantCreditRequest contains the credit grant to create.
+message GrantCreditRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  CreditGrant credit = 2 [(google.api.field_behavior) = REQUIRED];
+  string credit_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// GetCreditRequest identifies the credit grant to retrieve.
+message GetCreditRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListCreditsRequest selects credit grants belonging to a customer.
+message ListCreditsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+// ListCreditsResponse contains a page of credit grants.
+message ListCreditsResponse {
+  repeated CreditGrant credits = 1;
+  string next_page_token = 2;
+}
+
+// VoidCreditRequest identifies a credit grant and records why it is voided.
+message VoidCreditRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// CreateCommitmentRequest contains the commitment to create.
+message CreateCommitmentRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Commitment commitment = 2 [(google.api.field_behavior) = REQUIRED];
+  string commitment_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// GetCommitmentRequest identifies the commitment to retrieve.
+message GetCommitmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListCommitmentsRequest selects commitments belonging to a customer.
+message ListCommitmentsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+// ListCommitmentsResponse contains a page of commitments.
+message ListCommitmentsResponse {
+  repeated Commitment commitments = 1;
+  string next_page_token = 2;
+}
+
+// VoidCommitmentRequest identifies a commitment and records why it is voided.
+message VoidCommitmentRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetBalanceRequest identifies the customer whose balance is requested.
+message GetBalanceRequest {
+  string customer = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp as_of_time = 2;
+}
+
+// ListBalanceTransactionsRequest selects ledger entries for a customer.
+message ListBalanceTransactionsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+// ListBalanceTransactionsResponse contains a page of balance transactions.
+message ListBalanceTransactionsResponse {
+  repeated BalanceTransaction transactions = 1;
+  string next_page_token = 2;
+}

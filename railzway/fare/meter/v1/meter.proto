@@ -1,0 +1,93 @@
+syntax = "proto3";
+package railzway.fare.meter.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// MeterService manages definitions used to aggregate usage events.
+service MeterService {
+  // CreateMeter creates a usage meter.
+  rpc CreateMeter(CreateMeterRequest) returns (Meter) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/meters"
+      body: "meter"
+    };
+  }
+  // GetMeter retrieves a meter by resource name.
+  rpc GetMeter(GetMeterRequest) returns (Meter) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/meters/*}"};
+  }
+  // ListMeters lists meters in an organization.
+  rpc ListMeters(ListMetersRequest) returns (ListMetersResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/meters"};
+  }
+  // UpdateMeter updates selected meter fields.
+  rpc UpdateMeter(UpdateMeterRequest) returns (Meter) {
+    option (google.api.http) = {
+      patch: "/v1/{meter.name=organizations/*/meters/*}"
+      body: "meter"
+    };
+  }
+}
+
+// AggregationType defines how matching usage values are combined.
+enum AggregationType {
+  AGGREGATION_TYPE_UNSPECIFIED = 0;
+  AGGREGATION_TYPE_COUNT = 1;
+  AGGREGATION_TYPE_SUM = 2;
+  AGGREGATION_TYPE_MAX = 3;
+  AGGREGATION_TYPE_UNIQUE_COUNT = 4;
+  AGGREGATION_TYPE_LATEST = 5;
+}
+
+// Meter defines how usage events are filtered, grouped, and aggregated.
+message Meter {
+  option (google.api.resource) = {
+    type: "api.railzway.com/Meter"
+    pattern: "organizations/{organization}/meters/{meter}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string event_type = 3 [(google.api.field_behavior) = REQUIRED];
+  AggregationType aggregation = 4 [(google.api.field_behavior) = REQUIRED];
+  string value_property = 5;
+  repeated string group_keys = 6;
+  google.protobuf.Timestamp create_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// CreateMeterRequest contains the meter to create.
+message CreateMeterRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Meter meter = 2 [(google.api.field_behavior) = REQUIRED];
+  string meter_id = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// GetMeterRequest identifies the meter to retrieve.
+message GetMeterRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListMetersRequest selects meters in an organization.
+message ListMetersRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// ListMetersResponse contains a page of meters.
+message ListMetersResponse {
+  repeated Meter meters = 1;
+  string next_page_token = 2;
+}
+
+// UpdateMeterRequest contains the meter fields to update.
+message UpdateMeterRequest {
+  Meter meter = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}

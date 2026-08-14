@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package railzway.common.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// EffectivePeriod is a half-open validity interval: [start_time, end_time).
+message EffectivePeriod {
+  // Inclusive start of the validity interval. The value must be in UTC.
+  google.protobuf.Timestamp start_time = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Exclusive end of the validity interval. If unset, the interval has no
+  // scheduled end. When set, it must be later than start_time.
+  google.protobuf.Timestamp end_time = 2 [(google.api.field_behavior) = OPTIONAL];
+}

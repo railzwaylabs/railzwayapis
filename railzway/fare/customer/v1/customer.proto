@@ -1,0 +1,110 @@
+syntax = "proto3";
+package railzway.fare.customer.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/type/postal_address.proto";
+
+// CustomerService manages billable customer accounts.
+service CustomerService {
+  // CreateCustomer creates a customer in an organization.
+  rpc CreateCustomer(CreateCustomerRequest) returns (Customer) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/customers"
+      body: "customer"
+    };
+  }
+  // GetCustomer retrieves a customer by resource name.
+  rpc GetCustomer(GetCustomerRequest) returns (Customer) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*}"};
+  }
+  // ListCustomers lists customers in an organization.
+  rpc ListCustomers(ListCustomersRequest) returns (ListCustomersResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/customers"};
+  }
+  // UpdateCustomer updates selected customer fields.
+  rpc UpdateCustomer(UpdateCustomerRequest) returns (Customer) {
+    option (google.api.http) = {
+      patch: "/v1/{customer.name=organizations/*/customers/*}"
+      body: "customer"
+    };
+  }
+  // ArchiveCustomer prevents future use of a customer account.
+  rpc ArchiveCustomer(ArchiveCustomerRequest) returns (Customer) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/customers/*}:archive"
+      body: "*"
+    };
+  }
+}
+
+// Customer represents a billable account within an organization.
+message Customer {
+  option (google.api.resource) = {
+    type: "api.railzway.com/Customer"
+    pattern: "organizations/{organization}/customers/{customer}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string external_id = 2 [(google.api.field_behavior) = REQUIRED];
+  string display_name = 3 [(google.api.field_behavior) = REQUIRED];
+  string email = 4;
+  string currency_code = 5 [(google.api.field_behavior) = REQUIRED];
+  map<string, string> metadata = 6;
+  bool archived = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  BillingProfile billing_profile = 10 [(google.api.field_behavior) = REQUIRED];
+}
+
+// BillingProfile contains structured identity and location data used for
+// invoicing, tax presentation, and payment-provider eligibility.
+message BillingProfile {
+  string legal_name = 1 [(google.api.field_behavior) = REQUIRED];
+  string display_name = 2;
+  string billing_email = 3 [(google.api.field_behavior) = REQUIRED];
+  google.type.PostalAddress address = 4 [(google.api.field_behavior) = REQUIRED];
+  string country_code = 5 [(google.api.field_behavior) = REQUIRED];
+}
+
+// CreateCustomerRequest contains the customer to create.
+message CreateCustomerRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  Customer customer = 2 [(google.api.field_behavior) = REQUIRED];
+  string customer_id = 3;
+  string request_id = 4;
+}
+
+// GetCustomerRequest identifies the customer to retrieve.
+message GetCustomerRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListCustomersRequest selects customers in an organization.
+message ListCustomersRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+// ListCustomersResponse contains a page of customers.
+message ListCustomersResponse {
+  repeated Customer customers = 1;
+  string next_page_token = 2;
+}
+
+// UpdateCustomerRequest contains the customer fields to update.
+message UpdateCustomerRequest {
+  Customer customer = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 3;
+}
+
+// ArchiveCustomerRequest identifies the customer to archive.
+message ArchiveCustomerRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 2;
+}

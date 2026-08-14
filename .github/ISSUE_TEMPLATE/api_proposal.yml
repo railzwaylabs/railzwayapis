@@ -1,0 +1,92 @@
+name: API proposal
+description: Propose a new resource, service, RPC, field, or API version.
+title: "[API]: "
+body:
+  - type: markdown
+    attributes:
+      value: Describe the user problem before proposing the wire contract.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What customer or product problem should the API solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Show the end-to-end caller workflow and desired outcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-api
+    attributes:
+      label: Proposed API shape
+      description: Include proposed resources, services, RPCs, messages, and important fields.
+      render: proto
+    validations:
+      required: true
+
+  - type: textarea
+    id: http-mapping
+    attributes:
+      label: REST mapping
+      description: Describe HTTP verbs, resource paths, request body mappings, and custom methods.
+      placeholder: POST /v1/{parent=organizations/*}/products
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other designs were considered, and why are they insufficient?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Backward-compatibility impact
+      options:
+        - Additive change to an existing v1 package
+        - Compatible correction to an existing v1 package
+        - Breaking change requiring a new v2 package
+        - New API package with no existing consumers
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: migration
+    attributes:
+      label: Migration plan
+      description: Explain how existing callers and implementations will adopt this change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that make this proposal complete.
+      placeholder: |
+        - [ ] Existing v1 clients remain compatible
+        - [ ] REST and gRPC behavior is documented
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched for existing proposals and related API contracts.
+          required: true
+        - label: I considered resource naming, idempotency, pagination, and error behavior where applicable.
+          required: true
+

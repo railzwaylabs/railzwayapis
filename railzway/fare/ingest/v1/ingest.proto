@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package railzway.fare.ingest.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+// UsageIngestionService accepts and manages metered usage events.
+service UsageIngestionService {
+  // IngestUsage accepts one idempotent usage event.
+  rpc IngestUsage(IngestUsageRequest) returns (IngestUsageResponse) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/usageEvents:ingest"
+      body: "*"
+    };
+  }
+  // BatchIngestUsage accepts multiple independently processed usage events.
+  rpc BatchIngestUsage(BatchIngestUsageRequest) returns (BatchIngestUsageResponse) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/usageEvents:batchIngest"
+      body: "*"
+    };
+  }
+  // GetUsageEvent retrieves an ingested usage event.
+  rpc GetUsageEvent(GetUsageEventRequest) returns (UsageEvent) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/usageEvents/*}"};
+  }
+  // ListUsageEvents lists usage events in an organization.
+  rpc ListUsageEvents(ListUsageEventsRequest) returns (ListUsageEventsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/usageEvents"};
+  }
+  // CorrectUsageEvent supersedes an accepted event with corrected data.
+  rpc CorrectUsageEvent(CorrectUsageEventRequest) returns (UsageEvent) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/usageEvents/*}:correct"
+      body: "*"
+    };
+  }
+  // ReplayUsageEvents requests reprocessing of previously ingested events.
+  rpc ReplayUsageEvents(ReplayUsageEventsRequest) returns (ReplayUsageEventsResponse) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/usageEvents:replay"
+      body: "*"
+    };
+  }
+}
+
+// IngestionStatus describes the processing outcome of a usage event.
+enum IngestionStatus {
+  INGESTION_STATUS_UNSPECIFIED = 0;
+  INGESTION_STATUS_ACCEPTED = 1;
+  INGESTION_STATUS_DUPLICATE = 2;
+  INGESTION_STATUS_REJECTED = 3;
+  INGESTION_STATUS_CORRECTED = 4;
+}
+
+// UsageEvent is an immutable measurement submitted for billing.
+message UsageEvent {
+  option (google.api.resource) = {
+    type: "api.railzway.com/UsageEvent"
+    pattern: "organizations/{organization}/usageEvents/{usage_event}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string event_id = 2 [(google.api.field_behavior) = REQUIRED];
+  string customer = 3 [(google.api.field_behavior) = REQUIRED];
+  string event_type = 4 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp event_time = 5 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Struct properties = 6;
+  IngestionStatus status = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string correction_of = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp ingest_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// IngestUsageRequest contains one usage event to ingest.
+message IngestUsageRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  UsageEvent event = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// IngestUsageResponse reports the accepted event and ingestion status.
+message IngestUsageResponse {
+  string event_id = 1;
+  IngestionStatus status = 2;
+  string error_code = 3;
+  string error_message = 4;
+  string usage_event = 5;
+}
+
+// BatchIngestUsageRequest contains usage events to process independently.
+message BatchIngestUsageRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated UsageEvent events = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// BatchIngestUsageResponse contains the result for each submitted event.
+message BatchIngestUsageResponse {
+  repeated IngestUsageResponse results = 1;
+}
+
+// GetUsageEventRequest identifies the usage event to retrieve.
+message GetUsageEventRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListUsageEventsRequest selects usage events for an organization.
+message ListUsageEventsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string customer = 4;
+  string event_type = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+}
+
+// ListUsageEventsResponse contains a page of usage events.
+message ListUsageEventsResponse {
+  repeated UsageEvent events = 1;
+  string next_page_token = 2;
+}
+
+// CorrectUsageEventRequest contains a replacement for an existing event.
+message CorrectUsageEventRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  UsageEvent replacement = 2 [(google.api.field_behavior) = REQUIRED];
+  string reason = 3 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 4;
+}
+
+// ReplayUsageEventsRequest selects events to reprocess.
+message ReplayUsageEventsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp start_time = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp end_time = 3 [(google.api.field_behavior) = REQUIRED];
+  string customer = 4;
+  string event_type = 5;
+  string request_id = 6;
+}
+
+// ReplayUsageEventsResponse reports how many events were scheduled.
+message ReplayUsageEventsResponse {
+  string replay_id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  int64 matched_event_count = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp watermark_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

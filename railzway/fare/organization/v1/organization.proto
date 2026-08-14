@@ -1,0 +1,77 @@
+syntax = "proto3";
+package railzway.fare.organization.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// OrganizationService manages billing tenants.
+service OrganizationService {
+  // CreateOrganization creates a billing tenant.
+  rpc CreateOrganization(CreateOrganizationRequest) returns (Organization) {
+    option (google.api.http) = {
+      post: "/v1/organizations"
+      body: "organization"
+    };
+  }
+  // GetOrganization retrieves an organization by resource name.
+  rpc GetOrganization(GetOrganizationRequest) returns (Organization) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*}"};
+  }
+  // ListOrganizations lists organizations visible to the caller.
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse) {
+    option (google.api.http) = {get: "/v1/organizations"};
+  }
+  // UpdateOrganization updates selected organization fields.
+  rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization) {
+    option (google.api.http) = {
+      patch: "/v1/{organization.name=organizations/*}"
+      body: "organization"
+    };
+  }
+}
+
+// Organization represents an isolated billing tenant.
+message Organization {
+  option (google.api.resource) = {
+    type: "api.railzway.com/Organization"
+    pattern: "organizations/{organization}"
+  };
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string default_currency_code = 3 [(google.api.field_behavior) = REQUIRED];
+  string time_zone = 4 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp create_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// CreateOrganizationRequest contains the organization to create.
+message CreateOrganizationRequest {
+  Organization organization = 1 [(google.api.field_behavior) = REQUIRED];
+  string organization_id = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetOrganizationRequest identifies the organization to retrieve.
+message GetOrganizationRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListOrganizationsRequest selects organizations visible to the caller.
+message ListOrganizationsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+// ListOrganizationsResponse contains a page of organizations.
+message ListOrganizationsResponse {
+  repeated Organization organizations = 1;
+  string next_page_token = 2;
+}
+
+// UpdateOrganizationRequest contains the organization fields to update.
+message UpdateOrganizationRequest {
+  Organization organization = 1 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}

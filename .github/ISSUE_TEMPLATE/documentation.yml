@@ -1,0 +1,43 @@
+name: Documentation
+description: Report missing, incorrect, or unclear documentation and proto comments.
+title: "[Docs]: "
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Link to or name the README section, proto file, message, or field.
+      placeholder: railzway/billing/catalog/v1/catalog.proto - Rate.effective_period
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Documentation problem
+      description: Explain what is missing, incorrect, or difficult to understand.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Suggested improvement
+      description: Describe the explanation or example that would resolve the issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include related links, screenshots, or examples.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I verified that this is not already covered elsewhere in the repository.
+          required: true
+

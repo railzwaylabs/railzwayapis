@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package railzway.common.v1;
+
+import "google/api/field_behavior.proto";
+
+// Decimal is a canonical base-10 value. Scientific notation, leading plus
+// signs, and insignificant leading or trailing zeros are not allowed.
+message Decimal {
+  // Canonical decimal representation, for example "0", "12.5", or "-0.01".
+  string value = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Money is an exact monetary value in an ISO 4217 currency.
+message Money {
+  // Three-letter ISO 4217 currency code.
+  string currency_code = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Exact amount in the specified currency.
+  Decimal amount = 2 [(google.api.field_behavior) = REQUIRED];
+}

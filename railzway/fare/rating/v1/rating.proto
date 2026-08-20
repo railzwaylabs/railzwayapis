@@ -10,12 +10,12 @@ import "railzway/common/v1/money.proto";
 service RatingService {
   // QueryUsage returns aggregated usage for a reporting period.
   rpc QueryUsage(QueryUsageRequest) returns (QueryUsageResponse) {
-    option (google.api.http) = {get: "/v1/{customer=organizations/*/customers/*}/usage"};
+    option (google.api.http) = {get: "/v1/{customer=customers/*}/usage"};
   }
   // PreviewCharges rates usage without creating or finalizing an invoice.
   rpc PreviewCharges(PreviewChargesRequest) returns (PreviewChargesResponse) {
     option (google.api.http) = {
-      post: "/v1/{customer=organizations/*/customers/*}/charges:preview"
+      post: "/v1/{customer=customers/*}/charges:preview"
       body: "*"
     };
   }

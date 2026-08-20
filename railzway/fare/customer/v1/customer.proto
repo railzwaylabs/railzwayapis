@@ -13,29 +13,29 @@ service CustomerService {
   // CreateCustomer creates a customer in an organization.
   rpc CreateCustomer(CreateCustomerRequest) returns (Customer) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/customers"
+      post: "/v1/customers"
       body: "customer"
     };
   }
   // GetCustomer retrieves a customer by resource name.
   rpc GetCustomer(GetCustomerRequest) returns (Customer) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*}"};
   }
   // ListCustomers lists customers in an organization.
   rpc ListCustomers(ListCustomersRequest) returns (ListCustomersResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/customers"};
+    option (google.api.http) = {get: "/v1/customers"};
   }
   // UpdateCustomer updates selected customer fields.
   rpc UpdateCustomer(UpdateCustomerRequest) returns (Customer) {
     option (google.api.http) = {
-      patch: "/v1/{customer.name=organizations/*/customers/*}"
+      patch: "/v1/{customer.name=customers/*}"
       body: "customer"
     };
   }
   // ArchiveCustomer prevents future use of a customer account.
   rpc ArchiveCustomer(ArchiveCustomerRequest) returns (Customer) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*}:archive"
+      post: "/v1/{name=customers/*}:archive"
       body: "*"
     };
   }

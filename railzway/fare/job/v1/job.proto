@@ -40,18 +40,18 @@ message Job {
 service JobService {
   // GetJob retrieves one background job.
   rpc GetJob(GetJobRequest) returns (Job) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/jobs/*}"};
+    option (google.api.http) = {get: "/v1/{name=jobs/*}"};
   }
 
   // ListJobs lists recent jobs for an organization.
   rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/jobs"};
+    option (google.api.http) = {get: "/v1/jobs"};
   }
 
   // RetryJob makes a failed job immediately eligible for another attempt.
   rpc RetryJob(RetryJobRequest) returns (Job) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/jobs/*}:retry"
+      post: "/v1/{name=jobs/*}:retry"
       body: "*"
     };
   }

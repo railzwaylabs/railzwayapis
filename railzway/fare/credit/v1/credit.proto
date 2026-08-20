@@ -14,54 +14,54 @@ service CreditService {
   // GrantCredit grants a time-bounded credit to a customer.
   rpc GrantCredit(GrantCreditRequest) returns (CreditGrant) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*/customers/*}/credits"
+      post: "/v1/{parent=customers/*}/credits"
       body: "credit"
     };
   }
   // GetCredit retrieves a credit grant by resource name.
   rpc GetCredit(GetCreditRequest) returns (CreditGrant) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/credits/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/credits/*}"};
   }
   // ListCredits lists credit grants belonging to a customer.
   rpc ListCredits(ListCreditsRequest) returns (ListCreditsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/credits"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*}/credits"};
   }
   // VoidCredit prevents any remaining grant amount from being consumed.
   rpc VoidCredit(VoidCreditRequest) returns (CreditGrant) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/credits/*}:void"
+      post: "/v1/{name=customers/*/credits/*}:void"
       body: "*"
     };
   }
   // CreateCommitment creates a customer's minimum-spend commitment.
   rpc CreateCommitment(CreateCommitmentRequest) returns (Commitment) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*/customers/*}/commitments"
+      post: "/v1/{parent=customers/*}/commitments"
       body: "commitment"
     };
   }
   // GetCommitment retrieves a commitment by resource name.
   rpc GetCommitment(GetCommitmentRequest) returns (Commitment) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/commitments/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/commitments/*}"};
   }
   // ListCommitments lists commitments belonging to a customer.
   rpc ListCommitments(ListCommitmentsRequest) returns (ListCommitmentsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/commitments"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*}/commitments"};
   }
   // VoidCommitment deactivates a commitment while preserving its record.
   rpc VoidCommitment(VoidCommitmentRequest) returns (Commitment) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/commitments/*}:void"
+      post: "/v1/{name=customers/*/commitments/*}:void"
       body: "*"
     };
   }
   // GetBalance returns the customer's current credit balance.
   rpc GetBalance(GetBalanceRequest) returns (Balance) {
-    option (google.api.http) = {get: "/v1/{customer=organizations/*/customers/*}/balance"};
+    option (google.api.http) = {get: "/v1/{customer=customers/*}/balance"};
   }
   // ListBalanceTransactions lists the ledger entries behind a balance.
   rpc ListBalanceTransactions(ListBalanceTransactionsRequest) returns (ListBalanceTransactionsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/balanceTransactions"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*}/balanceTransactions"};
   }
 }
 

@@ -29,6 +29,22 @@ Keep ecosystem boundaries explicit:
 Do not import implementation models, database schemas, or internal transport
 types into these public contracts.
 
+### Organization-scoped HTTP bindings
+
+Public REST bindings do not require an organization identifier in the URL. An
+organization-scoped API key and the verified request hostname determine the
+tenant, so callers use paths such as `/v1/customers`, `/v1/products`, and
+`/v1/customers/{customer}/invoices`. The implementation must reject a hostname
+whose organization differs from the credential organization.
+
+Canonical resource names remain fully qualified, for example
+`organizations/acme/customers/cus-123`, but canonical organization-prefixed
+HTTP bindings are intentionally not exposed by this public contract. The Fare
+Console adapter resolves its selected organization before invoking the same
+flat generated service. Organization creation and membership-driven listing are
+Console operations; the scoped Public API exposes the current organization as
+`/v1/organization`.
+
 ## Billing API surface
 
 | Package | Responsibility |

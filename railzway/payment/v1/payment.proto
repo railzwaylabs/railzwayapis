@@ -209,25 +209,25 @@ service PaymentConfigurationService {
   // CreateProviderConnection connects an organization merchant account.
   rpc CreateProviderConnection(CreateProviderConnectionRequest) returns (ProviderConnection) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/providerConnections"
+      post: "/v1/providerConnections"
       body: "*"
     };
   }
 
   // GetProviderConnection retrieves a provider connection.
   rpc GetProviderConnection(GetProviderConnectionRequest) returns (ProviderConnection) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/providerConnections/*}"};
+    option (google.api.http) = {get: "/v1/{name=providerConnections/*}"};
   }
 
   // ListProviderConnections lists an organization's provider connections.
   rpc ListProviderConnections(ListProviderConnectionsRequest) returns (ListProviderConnectionsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/providerConnections"};
+    option (google.api.http) = {get: "/v1/providerConnections"};
   }
 
   // UpdateProviderConnection updates non-secret connection settings.
   rpc UpdateProviderConnection(UpdateProviderConnectionRequest) returns (ProviderConnection) {
     option (google.api.http) = {
-      patch: "/v1/{provider_connection.name=organizations/*/providerConnections/*}"
+      patch: "/v1/{provider_connection.name=providerConnections/*}"
       body: "provider_connection"
     };
   }
@@ -235,20 +235,20 @@ service PaymentConfigurationService {
   // DisableProviderConnection stops new payments from using a connection.
   rpc DisableProviderConnection(DisableProviderConnectionRequest) returns (ProviderConnection) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/providerConnections/*}:disable"
+      post: "/v1/{name=providerConnections/*}:disable"
       body: "*"
     };
   }
 
   // GetRoutingPolicy retrieves an organization's routing policy.
   rpc GetRoutingPolicy(GetRoutingPolicyRequest) returns (RoutingPolicy) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/routingPolicy}"};
+    option (google.api.http) = {get: "/v1/{name=routingPolicy}"};
   }
 
   // UpdateRoutingPolicy replaces selected routing policy fields.
   rpc UpdateRoutingPolicy(UpdateRoutingPolicyRequest) returns (RoutingPolicy) {
     option (google.api.http) = {
-      patch: "/v1/{routing_policy.name=organizations/*/routingPolicy}"
+      patch: "/v1/{routing_policy.name=routingPolicy}"
       body: "routing_policy"
     };
   }
@@ -259,25 +259,25 @@ service PaymentMethodService {
   // CreatePaymentMethod stores a provider token as a reusable method.
   rpc CreatePaymentMethod(CreatePaymentMethodRequest) returns (PaymentMethod) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*/customers/*}/paymentMethods"
+      post: "/v1/{parent=customers/*}/paymentMethods"
       body: "*"
     };
   }
 
   // GetPaymentMethod retrieves a payment method.
   rpc GetPaymentMethod(GetPaymentMethodRequest) returns (PaymentMethod) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/paymentMethods/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/paymentMethods/*}"};
   }
 
   // ListPaymentMethods lists a customer's payment methods.
   rpc ListPaymentMethods(ListPaymentMethodsRequest) returns (ListPaymentMethodsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/paymentMethods"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*}/paymentMethods"};
   }
 
   // DisablePaymentMethod prevents future collection with a method.
   rpc DisablePaymentMethod(DisablePaymentMethodRequest) returns (PaymentMethod) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/paymentMethods/*}:disable"
+      post: "/v1/{name=customers/*/paymentMethods/*}:disable"
       body: "*"
     };
   }
@@ -288,37 +288,37 @@ service PaymentService {
   // CreatePayment starts collection for a finalized invoice.
   rpc CreatePayment(CreatePaymentRequest) returns (Payment) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*/customers/*}/payments"
+      post: "/v1/{parent=customers/*}/payments"
       body: "payment"
     };
   }
 
   // GetPayment retrieves a payment.
   rpc GetPayment(GetPaymentRequest) returns (Payment) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/payments/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/payments/*}"};
   }
 
   // ListPayments lists a customer's payments.
   rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/payments"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*}/payments"};
   }
 
   // RetryPayment explicitly retries an unsuccessful collection.
   rpc RetryPayment(RetryPaymentRequest) returns (Payment) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/payments/*}:retry"
+      post: "/v1/{name=customers/*/payments/*}:retry"
       body: "*"
     };
   }
 
   // GetPaymentAttempt retrieves an immutable payment attempt.
   rpc GetPaymentAttempt(GetPaymentAttemptRequest) returns (PaymentAttempt) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/payments/*/attempts/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/payments/*/attempts/*}"};
   }
 
   // ListPaymentAttempts lists the attempts for a payment.
   rpc ListPaymentAttempts(ListPaymentAttemptsRequest) returns (ListPaymentAttemptsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*/payments/*}/attempts"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*/payments/*}/attempts"};
   }
 }
 

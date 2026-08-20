@@ -13,36 +13,36 @@ service UsageIngestionService {
   // IngestUsage accepts one idempotent usage event.
   rpc IngestUsage(IngestUsageRequest) returns (IngestUsageResponse) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/usageEvents:ingest"
+      post: "/v1/usageEvents:ingest"
       body: "*"
     };
   }
   // BatchIngestUsage accepts multiple independently processed usage events.
   rpc BatchIngestUsage(BatchIngestUsageRequest) returns (BatchIngestUsageResponse) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/usageEvents:batchIngest"
+      post: "/v1/usageEvents:batchIngest"
       body: "*"
     };
   }
   // GetUsageEvent retrieves an ingested usage event.
   rpc GetUsageEvent(GetUsageEventRequest) returns (UsageEvent) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/usageEvents/*}"};
+    option (google.api.http) = {get: "/v1/{name=usageEvents/*}"};
   }
   // ListUsageEvents lists usage events in an organization.
   rpc ListUsageEvents(ListUsageEventsRequest) returns (ListUsageEventsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/usageEvents"};
+    option (google.api.http) = {get: "/v1/usageEvents"};
   }
   // CorrectUsageEvent supersedes an accepted event with corrected data.
   rpc CorrectUsageEvent(CorrectUsageEventRequest) returns (UsageEvent) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/usageEvents/*}:correct"
+      post: "/v1/{name=usageEvents/*}:correct"
       body: "*"
     };
   }
   // ReplayUsageEvents requests reprocessing of previously ingested events.
   rpc ReplayUsageEvents(ReplayUsageEventsRequest) returns (ReplayUsageEventsResponse) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/usageEvents:replay"
+      post: "/v1/usageEvents:replay"
       body: "*"
     };
   }

@@ -12,26 +12,26 @@ service OrganizationDomainService {
   // CreateOrganizationDomain registers a custom hostname for an organization.
   rpc CreateOrganizationDomain(CreateOrganizationDomainRequest) returns (OrganizationDomain) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/domains"
+      post: "/v1/domains"
       body: "organization_domain"
     };
   }
   // GetOrganizationDomain returns one domain visible to the caller.
   rpc GetOrganizationDomain(GetOrganizationDomainRequest) returns (OrganizationDomain) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/domains/*}"};
+    option (google.api.http) = {get: "/v1/{name=domains/*}"};
   }
   // ListOrganizationDomains lists domains assigned to an organization.
   rpc ListOrganizationDomains(ListOrganizationDomainsRequest) returns (ListOrganizationDomainsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/domains"};
+    option (google.api.http) = {get: "/v1/domains"};
   }
   // DeleteOrganizationDomain removes a custom domain. Default domains cannot be deleted.
   rpc DeleteOrganizationDomain(DeleteOrganizationDomainRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/v1/{name=organizations/*/domains/*}"};
+    option (google.api.http) = {delete: "/v1/{name=domains/*}"};
   }
   // VerifyOrganizationDomain checks DNS and activates a custom domain.
   rpc VerifyOrganizationDomain(VerifyOrganizationDomainRequest) returns (OrganizationDomain) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/domains/*}/verify"
+      post: "/v1/{name=domains/*}/verify"
       body: "*"
     };
   }

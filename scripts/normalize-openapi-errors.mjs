@@ -101,6 +101,9 @@ function publicPaths(paths = {}) {
     }
     const [, organizationParameter, suffix] = match;
     const publicPath = suffix === "" ? "/v1/organization" : `/v1${suffix}`;
+	if (normalized[publicPath]) {
+	  continue;
+	}
     for (const operation of Object.values(pathItem ?? {})) {
       if (operation && typeof operation === "object" && Array.isArray(operation.parameters)) {
         operation.parameters = operation.parameters.filter(
@@ -108,8 +111,18 @@ function publicPaths(paths = {}) {
         );
       }
     }
-    normalized[publicPath] = { ...(normalized[publicPath] ?? {}), ...pathItem };
+	normalized[publicPath] = pathItem;
   }
+	const tenantFields = new Set(["parent", "name", "customer", "organization.name", "provider_connection.name", "routing_policy.name"]);
+	for (const [path, pathItem] of Object.entries(normalized)) {
+	  for (const operation of Object.values(pathItem ?? {})) {
+	    if (!operation || typeof operation !== "object" || !Array.isArray(operation.parameters)) continue;
+	    operation.parameters = operation.parameters.filter((parameter) => {
+	      if (parameter?.in !== "query" || !tenantFields.has(parameter?.name)) return true;
+	      return path.includes(`{${parameter.name}}`);
+	    });
+	  }
+	}
   return normalized;
 }
 

@@ -13,44 +13,44 @@ service ContractService {
   // CreateContract creates a negotiated agreement for a customer.
   rpc CreateContract(CreateContractRequest) returns (Contract) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*/customers/*}/contracts"
+      post: "/v1/{parent=customers/*}/contracts"
       body: "contract"
     };
   }
   // GetContract retrieves a contract by resource name.
   rpc GetContract(GetContractRequest) returns (Contract) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/contracts/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/contracts/*}"};
   }
   // ListContracts lists contracts belonging to a customer.
   rpc ListContracts(ListContractsRequest) returns (ListContractsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/contracts"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*}/contracts"};
   }
   // ScheduleAmendment schedules a future contract change.
   rpc ScheduleAmendment(ScheduleAmendmentRequest) returns (ContractAmendment) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/contracts/*}:scheduleAmendment"
+      post: "/v1/{name=customers/*/contracts/*}:scheduleAmendment"
       body: "*"
     };
   }
   // GetAmendment retrieves a contract amendment by resource name.
   rpc GetAmendment(GetAmendmentRequest) returns (ContractAmendment) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/contracts/*/amendments/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/contracts/*/amendments/*}"};
   }
   // ListAmendments lists amendments for a contract.
   rpc ListAmendments(ListAmendmentsRequest) returns (ListAmendmentsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*/contracts/*}/amendments"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*/contracts/*}/amendments"};
   }
   // CancelAmendment cancels an amendment that has not yet been applied.
   rpc CancelAmendment(CancelAmendmentRequest) returns (ContractAmendment) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/contracts/*/amendments/*}:cancel"
+      post: "/v1/{name=customers/*/contracts/*/amendments/*}:cancel"
       body: "*"
     };
   }
   // EndContract schedules or records the end of a contract.
   rpc EndContract(EndContractRequest) returns (Contract) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/contracts/*}:end"
+      post: "/v1/{name=customers/*/contracts/*}:end"
       body: "*"
     };
   }

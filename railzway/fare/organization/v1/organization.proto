@@ -18,7 +18,7 @@ service OrganizationService {
   }
   // GetOrganization retrieves an organization by resource name.
   rpc GetOrganization(GetOrganizationRequest) returns (Organization) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*}"};
+    option (google.api.http) = {get: "/v1/organization"};
   }
   // ListOrganizations lists organizations visible to the caller.
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse) {
@@ -27,7 +27,7 @@ service OrganizationService {
   // UpdateOrganization updates selected organization fields.
   rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization) {
     option (google.api.http) = {
-      patch: "/v1/{organization.name=organizations/*}"
+      patch: "/v1/organization"
       body: "organization"
     };
   }

@@ -13,37 +13,37 @@ service CatalogService {
   // Creates a product that can appear as an invoice line item.
   rpc CreateProduct(CreateProductRequest) returns (Product) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/products"
+      post: "/v1/products"
       body: "product"
     };
   }
   // Gets a product by resource name.
   rpc GetProduct(GetProductRequest) returns (Product) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/products/*}"};
+    option (google.api.http) = {get: "/v1/{name=products/*}"};
   }
   // Lists products owned by an organization.
   rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/products"};
+    option (google.api.http) = {get: "/v1/products"};
   }
   // Creates a reusable price book for customer contracts.
   rpc CreateRateCard(CreateRateCardRequest) returns (RateCard) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/rateCards"
+      post: "/v1/rateCards"
       body: "rate_card"
     };
   }
   // Gets a rate card by resource name.
   rpc GetRateCard(GetRateCardRequest) returns (RateCard) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/rateCards/*}"};
+    option (google.api.http) = {get: "/v1/{name=rateCards/*}"};
   }
   // Lists rate cards owned by an organization.
   rpc ListRateCards(ListRateCardsRequest) returns (ListRateCardsResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/rateCards"};
+    option (google.api.http) = {get: "/v1/rateCards"};
   }
   // Adds an immutable, effective-dated rate to a rate card.
   rpc AddRate(AddRateRequest) returns (Rate) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*/rateCards/*}/rates"
+      post: "/v1/{parent=rateCards/*}/rates"
       body: "rate"
     };
   }

@@ -11,30 +11,30 @@ import "railzway/common/v1/money.proto";
 service InvoiceService {
   // GetInvoice retrieves an invoice by resource name.
   rpc GetInvoice(GetInvoiceRequest) returns (Invoice) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/customers/*/invoices/*}"};
+    option (google.api.http) = {get: "/v1/{name=customers/*/invoices/*}"};
   }
   // ListInvoices lists invoices belonging to a customer.
   rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*/customers/*}/invoices"};
+    option (google.api.http) = {get: "/v1/{parent=customers/*}/invoices"};
   }
   // PreviewInvoice computes an invoice without persisting a finalized result.
   rpc PreviewInvoice(PreviewInvoiceRequest) returns (Invoice) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*/customers/*}/invoices:preview"
+      post: "/v1/{parent=customers/*}/invoices:preview"
       body: "*"
     };
   }
   // FinalizeInvoice makes an invoice immutable for financial reporting.
   rpc FinalizeInvoice(FinalizeInvoiceRequest) returns (Invoice) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/invoices/*}:finalize"
+      post: "/v1/{name=customers/*/invoices/*}:finalize"
       body: "*"
     };
   }
   // VoidInvoice invalidates a finalized invoice while preserving its record.
   rpc VoidInvoice(VoidInvoiceRequest) returns (Invoice) {
     option (google.api.http) = {
-      post: "/v1/{name=organizations/*/customers/*/invoices/*}:void"
+      post: "/v1/{name=customers/*/invoices/*}:void"
       body: "*"
     };
   }

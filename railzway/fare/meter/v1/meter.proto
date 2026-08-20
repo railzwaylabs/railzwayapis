@@ -12,22 +12,22 @@ service MeterService {
   // CreateMeter creates a usage meter.
   rpc CreateMeter(CreateMeterRequest) returns (Meter) {
     option (google.api.http) = {
-      post: "/v1/{parent=organizations/*}/meters"
+      post: "/v1/meters"
       body: "meter"
     };
   }
   // GetMeter retrieves a meter by resource name.
   rpc GetMeter(GetMeterRequest) returns (Meter) {
-    option (google.api.http) = {get: "/v1/{name=organizations/*/meters/*}"};
+    option (google.api.http) = {get: "/v1/{name=meters/*}"};
   }
   // ListMeters lists meters in an organization.
   rpc ListMeters(ListMetersRequest) returns (ListMetersResponse) {
-    option (google.api.http) = {get: "/v1/{parent=organizations/*}/meters"};
+    option (google.api.http) = {get: "/v1/meters"};
   }
   // UpdateMeter updates selected meter fields.
   rpc UpdateMeter(UpdateMeterRequest) returns (Meter) {
     option (google.api.http) = {
-      patch: "/v1/{meter.name=organizations/*/meters/*}"
+      patch: "/v1/{meter.name=meters/*}"
       body: "meter"
     };
   }

@@ -86,8 +86,36 @@ async function jsonFiles(directory) {
   return nested.flat();
 }
 
+function publicPaths(paths = {}) {
+  const normalized = {};
+  for (const [path, pathItem] of Object.entries(paths)) {
+    if (path === "/v1/organizations") {
+      // Tenant creation and membership-driven organization listing belong to
+      // the Console API, not the organization-scoped public API.
+      continue;
+    }
+    const match = path.match(/^\/v1\/organizations\/\{([^}]+)\}(.*)$/);
+    if (!match) {
+      normalized[path] = pathItem;
+      continue;
+    }
+    const [, organizationParameter, suffix] = match;
+    const publicPath = suffix === "" ? "/v1/organization" : `/v1${suffix}`;
+    for (const operation of Object.values(pathItem ?? {})) {
+      if (operation && typeof operation === "object" && Array.isArray(operation.parameters)) {
+        operation.parameters = operation.parameters.filter(
+          (parameter) => !(parameter?.in === "path" && parameter?.name === organizationParameter),
+        );
+      }
+    }
+    normalized[publicPath] = { ...(normalized[publicPath] ?? {}), ...pathItem };
+  }
+  return normalized;
+}
+
 for (const file of await jsonFiles(root)) {
   const document = JSON.parse(await readFile(file, "utf8"));
+  document.paths = publicPaths(document.paths);
   for (const pathItem of Object.values(document.paths ?? {})) {
     for (const operation of Object.values(pathItem ?? {})) {
       if (operation && typeof operation === "object" && operation.responses) {

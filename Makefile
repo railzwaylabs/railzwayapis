@@ -10,8 +10,8 @@ lint:
 
 generate:
 	buf generate
+	node scripts/normalize-openapi-errors.mjs
 
 # Compare the working tree against the API contract on the main branch.
 breaking:
 	buf breaking --against '.git#branch=main'
-

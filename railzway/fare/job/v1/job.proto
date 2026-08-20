@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package railzway.fare.job.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+// JobStatus describes the durable execution state of a background job.
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_PENDING = 1;
+  JOB_STATUS_RUNNING = 2;
+  JOB_STATUS_SUCCEEDED = 3;
+  JOB_STATUS_FAILED = 4;
+}
+
+// Job records an observable background operation such as invoice delivery.
+message Job {
+  option (google.api.resource) = {
+    type: "api.railzway.com/Job"
+    pattern: "organizations/{organization}/jobs/{job}"
+  };
+
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
+  string job_type = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string resource_type = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string resource_name = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  JobStatus status = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  int32 attempts = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string last_error = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp started_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp completed_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// JobService exposes organization-scoped operational jobs to the Console.
+service JobService {
+  // GetJob retrieves one background job.
+  rpc GetJob(GetJobRequest) returns (Job) {
+    option (google.api.http) = {get: "/v1/{name=organizations/*/jobs/*}"};
+  }
+
+  // ListJobs lists recent jobs for an organization.
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {
+    option (google.api.http) = {get: "/v1/{parent=organizations/*}/jobs"};
+  }
+
+  // RetryJob makes a failed job immediately eligible for another attempt.
+  rpc RetryJob(RetryJobRequest) returns (Job) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/jobs/*}:retry"
+      body: "*"
+    };
+  }
+}
+
+// GetJobRequest identifies a background job.
+message GetJobRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ListJobsRequest selects organization jobs using a stable page token.
+message ListJobsRequest {
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2;
+  string page_token = 3;
+  string filter = 4;
+}
+
+// ListJobsResponse returns a page of background jobs.
+message ListJobsResponse {
+  repeated Job jobs = 1;
+  string next_page_token = 2;
+}
+
+// RetryJobRequest retries one failed job idempotently.
+message RetryJobRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string request_id = 2;
+}

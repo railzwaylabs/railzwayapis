@@ -1,7 +1,5 @@
 version: v2
 
-# Keep the local module manifest used by Fare's development fallback. Generated
-# sources remain ignored and are overwritten deterministically by each plugin.
 clean: false
 
 managed:
@@ -9,6 +7,7 @@ managed:
   disable:
     - file_option: go_package_prefix
       module: buf.build/googleapis/googleapis
+
   override:
     - file_option: go_package_prefix
       value: github.com/railzwaylabs/railzwayapis/gen/go
@@ -26,8 +25,7 @@ plugins:
     out: gen/go
     opt:
       - paths=source_relative
-  - remote: buf.build/grpc-ecosystem/openapiv2:v2.30.0
-    out: gen
-
-inputs:
-  - directory: .
+  - remote: buf.build/grpc-ecosystem/openapiv3:v2.30.0
+    out: gen/openapiv2
+    opt:
+      - disable_default_errors=true

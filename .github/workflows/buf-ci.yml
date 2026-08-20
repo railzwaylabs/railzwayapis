@@ -10,6 +10,7 @@ on:
       - "buf.lock"
       - "buf.gen.yaml"
       - "Makefile"
+      - "scripts/normalize-openapi-errors.mjs"
       - ".github/workflows/buf-ci.yml"
   pull_request:
     branches:
@@ -61,7 +62,28 @@ jobs:
           git diff --exit-code -- buf.lock
 
       - name: Verify code generation
-        run: buf generate
+        run: make generate
+
+      - name: Verify documented error envelope
+        run: |
+          ! grep -R 'google\.rpc\.Status' gen/openapiv2
+          grep -R 'railzway\.api\.ErrorResponse' gen/openapiv2 >/dev/null
 
       - name: Verify patch hygiene
         run: git diff --check
+
+  notify-docs:
+    name: Notify documentation repository
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Dispatch API specification update
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_AUTOMATION_TOKEN }}
+        run: |
+          gh api --method POST /repos/railzwaylabs/railzway-docs/dispatches \
+            --field event_type=api-spec-updated \
+            --field "client_payload[sha]=$GITHUB_SHA"
